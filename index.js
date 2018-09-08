@@ -3,6 +3,10 @@ const { router, get } = require('microrouter');
 const fetch = require('node-fetch');
 const tj = require('@mapbox/togeojson');
 const DOMParser = require('xmldom').DOMParser;
+const flatten = require('geojson-flatten');
+var simplify = require('simplify-geojson')
+
+
 
 // map severity levels of events to a color
 const severityColors = {
@@ -88,11 +92,28 @@ function driveBCtoGeoJson(json){
   };
   return geoJson;
 }
+
+const simplifygeojson = async (req, res) => {
+
+  const proxyURL = await Promise.resolve(req.url.replace('/simplifygeojson/', ''));
+  const response = await fetch(proxyURL);
+  // const geojson = await response.text();
+
+  const data = await response.text();
+  var geojson = JSON.parse(data);
+
+  // var simplified = flatten(geojson);
+  var simplified = simplify(geojson, (req.query.tolerance || 90));
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  send(res, 200, simplified);
+}
  
 module.exports = router(
   get('/proxy/:url', proxy),
   get('/smokeproxy', smokeproxy),
   get('/kmltogeojson/:url', kmltogeojson),
+  get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
   get('/*', notfound)
 );
