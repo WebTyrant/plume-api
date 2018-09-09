@@ -103,7 +103,7 @@ const simplifygeojson = async (req, res) => {
   var geojson = JSON.parse(data);
 
   // var simplified = flatten(geojson);
-  var simplified = simplify(geojson, (req.query.tolerance || 90));
+  var simplified = simplify(geojson, (req.query.tolerance || 1));
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   send(res, 200, simplified);
