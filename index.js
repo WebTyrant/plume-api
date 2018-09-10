@@ -42,7 +42,8 @@ const kmltogeojson = async (req, res) => {
 
 
 const proxy = async (req, res) => {
-  const proxyURL = await Promise.resolve(req.params.url);
+  // const proxyURL = await Promise.resolve(req.params.url);
+  const proxyURL = await Promise.resolve(req.url.replace('/proxy/', ''));
   const request = await fetch(proxyURL);
   const data = await request.text();
 
