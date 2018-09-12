@@ -2,9 +2,11 @@ const { send } = require('micro');
 const { router, get } = require('microrouter');
 const fetch = require('node-fetch');
 const tj = require('@mapbox/togeojson');
+const esriToGeoJSON = require('esri-to-geojson')
 const DOMParser = require('xmldom').DOMParser;
 const flatten = require('geojson-flatten');
 const simplify = require('simplify-geojson');
+const moment = require('moment');
 
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
@@ -112,29 +114,21 @@ const simplifygeojson = async (req, res) => {
 const findDocuments = function(collection, findJson, callback) {
   collection.find(findJson).toArray(function(err, docs) {
     assert.equal(err, null);
-    console.log("Found the following records");
-    // console.log(docs);
     callback(docs);
   });
 }
 
-const mongo = async (req, res) => {
-
+const fetchAggregationLayers = async(groupId) => {
+  // console.log('fetchAggregationLayers: ', groupId);
   let client;
-
+  let documents = [];
   try {
     // Use connect method to connect to the Server
-    client = await MongoClient.connect(uri);
-    console.log("Connected to Server");
-
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const db = client.db("adventureConditions");
     const collection = db.collection("aggregationSources");
 
-    let documents = await collection.find({'groupId': 'fire-perimeters'}).toArray();
-
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    send(res, 200, documents);
+    documents = await collection.find({'groupId': groupId}).toArray();
 
   } catch (err) {
     console.log(err.stack);
@@ -143,6 +137,49 @@ const mongo = async (req, res) => {
   if (client) {
     client.close();
   }
+  return documents;
+}
+
+// Update aggregationTime
+
+
+const aggregateLayers = async (req, res) => {
+  const groupId = await Promise.resolve(req.params.groupId);
+  const layers = await Promise.resolve(fetchAggregationLayers(groupId));
+  const aggregationTime = moment();
+
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i];
+      const response = await Promise.resolve(fetch(layer.endpoint));
+      let data = await Promise.resolve(response.json());
+
+      if(layer.type ==='esrijson'){
+        data = esriToGeoJSON.fromEsri(data)
+      }
+
+      const features = data.features;
+      const fields = layer.fields;
+
+      features.forEach((feature, index) => {
+        // add layer id
+        feature.properties.layerId = layer.layerId;
+
+        // normalize field names
+        for (var fieldKey in fields) {
+          var fieldValue = feature.properties[fields[fieldKey]];
+          if (fieldValue === undefined) fieldValue = fields[fieldKey];
+          feature.properties[fieldKey] = fieldValue;
+          delete feature.properties[fields[fieldKey]];
+        }
+      });
+
+      console.log(features);
+
+
+    }
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  send(res, 200, 'aggregateLayers Success: ' + groupId);
 }
 
 const notfound = (req, res) => send(res, 404, 'Not found route');
@@ -153,6 +190,6 @@ module.exports = router(
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
-  get('/mongo', mongo),
+  get('/aggregateLayers/:groupId', aggregateLayers),
   get('/*', notfound)
 );

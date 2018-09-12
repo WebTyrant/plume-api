@@ -7,9 +7,11 @@
   },
   "dependencies": {
     "@mapbox/togeojson": "^0.16.0",
+    "esri-to-geojson": "^1.0.4",
     "geojson-flatten": "^0.2.2",
     "micro": "^9.3.3",
     "microrouter": "^3.1.3",
+    "moment": "^2.22.2",
     "mongodb": "^3.1.4",
     "node-fetch": "^2.2.0",
     "simplify-geojson": "^1.0.3",
