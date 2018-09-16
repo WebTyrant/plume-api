@@ -182,6 +182,34 @@ const aggregateLayers = async (req, res) => {
   send(res, 200, 'aggregateLayers Success: ' + groupId);
 }
 
+const getSiteMeta = async(req, res) => {
+  const siteId = await Promise.resolve(req.params.siteId); 
+  let client;
+  // let documents = [];
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db("adventureConditions");
+    const collection = db.collection("siteMeta");
+
+    // console.log('collection', collection);
+    let documents = await collection.findOne({'siteId': siteId});
+
+    
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+  //return documents;
+}
+
 const notfound = (req, res) => send(res, 404, 'Not found route');
 
 module.exports = router(
@@ -191,5 +219,6 @@ module.exports = router(
   get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
   get('/aggregateLayers/:groupId', aggregateLayers),
+  get('/getSiteMeta/:siteId', getSiteMeta),
   get('/*', notfound)
 );
