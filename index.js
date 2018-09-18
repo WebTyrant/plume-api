@@ -191,11 +191,9 @@ const getSiteMeta = async(req, res) => {
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const db = client.db("adventureConditions");
     const collection = db.collection("siteMeta");
-
-    // console.log('collection', collection);
     let documents = await collection.findOne({'siteId': siteId});
 
-    
+    // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
 
