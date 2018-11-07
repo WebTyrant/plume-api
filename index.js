@@ -236,13 +236,16 @@ function ab511toGeoJson(json){
           "coordinates": [item.Longitude, item.Latitude],
         };
 
-        feature.properties = {
-          "Organization": item.Organization,
-          "RoadwayName": item.RoadwayName,
-          "Name": item.Name,
-          "Url": encodeURI(item.Url),
-          "Status": item.Status,
-        };
+        delete item.Longitude;
+        delete item.Latitude;
+
+        feature.properties = {};
+        feature.properties['Url'] = encodeURI(item.Url),
+        delete item.Url;
+
+        Object.keys(item).forEach(function(key) {
+          feature.properties[key] = item[key];
+        });
 
         geoJson.features.push(feature);
       }
