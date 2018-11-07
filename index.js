@@ -96,7 +96,6 @@ function driveBCtoGeoJson(json){
 }
 
 const simplifygeojson = async (req, res) => {
-
   const proxyURL = await Promise.resolve(req.url.replace('/simplifygeojson/', ''));
   const response = await fetch(proxyURL);
   // const geojson = await response.text();
@@ -141,8 +140,6 @@ const fetchAggregationLayers = async(groupId) => {
 }
 
 // Update aggregationTime
-
-
 const aggregateLayers = async (req, res) => {
   const groupId = await Promise.resolve(req.params.groupId);
   const layers = await Promise.resolve(fetchAggregationLayers(groupId));
@@ -172,10 +169,7 @@ const aggregateLayers = async (req, res) => {
           delete feature.properties[fields[fieldKey]];
         }
       });
-
       console.log(features);
-
-
     }
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -208,10 +202,59 @@ const getSiteMeta = async(req, res) => {
   //return documents;
 }
 
+const ab511proxy = async (req, res) => {
+  // const proxyURL = await Promise.resolve(req.params.url);
+  const proxyURL = await Promise.resolve(req.url.replace('/ab511proxy/', ''));
+  const request = await fetch(proxyURL);
+  const data = await request.text();
+  var json = JSON.parse(data);
+
+  json = ab511toGeoJson(json);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // // res.setHeader('Content-Type', 'text/xml');
+  send(res, 200, JSON.stringify(json));
+}
+
+function ab511toGeoJson(json){
+  var geoJson = {
+          "type": "FeatureCollection",
+          "features": [],
+      };
+  // restructure DriveBC 511 API JSON to become geoJSON compliant
+  for (var i = 0; i < json.length; i++) {
+      var item = json[i];
+
+      if(item.Status === 'Enabled') {
+        var feature = {
+          "type": "Feature",
+        };
+
+        feature.geometry = {
+          "type": "Point",
+          "coordinates": [item.Longitude, item.Latitude],
+        };
+
+        feature.properties = {
+          "Organization": item.Organization,
+          "RoadwayName": item.RoadwayName,
+          "Name": item.Name,
+          "Url": encodeURI(item.Url),
+          "Status": item.Status,
+        };
+
+        geoJson.features.push(feature);
+      }
+  };
+  return geoJson;
+}
+
 const notfound = (req, res) => send(res, 404, 'Not found route');
 
 module.exports = router(
   get('/proxy/:url', proxy),
+  get('/ab511proxy/:url', ab511proxy),
   get('/smokeproxy', smokeproxy),
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
