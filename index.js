@@ -266,7 +266,6 @@ const avalancheCanada = async (req, res) => {
 
 
   for (const feature of features) {
-  // features.forEach((feature, index) => {
     // add layer id
     let forecasteUrl = '';
 
@@ -278,13 +277,20 @@ const avalancheCanada = async (req, res) => {
         Object.keys(forecastDescription).forEach(function(key) {
           feature.properties[key] = forecastDescription[key];
         });
+
+        feature.properties.start_date = forecastDescription.dangerRatings[0].date;
+        const currentDangerRatings = forecastDescription.dangerRatings[0].dangerRating;
+        
+        Object.keys(currentDangerRatings).forEach(function(key) {
+          console.log(key, currentDangerRatings[key]);
+          feature.properties[key] = currentDangerRatings[key];
+        });
+
       }
-      
-      // feature.properties.forecastDescription = forecastDescription;
-    } else {
-      // create forecast url
-      console.log(' no forecast url', feature.properties.id);
-    }
+    } // else {
+      // create forecast url later
+      // console.log(' no forecast url', feature.properties.id);
+    // }
   }
 
   res.setHeader('Content-Type', 'application/json');
@@ -296,7 +302,6 @@ const avalancheCanada = async (req, res) => {
 const avalancheCanadaForecast = async (forecastUrl, req, res) => {
   const request = await fetch(forecastUrl);
   const data = await request.text();
-  console.log(typeof data);
 
   let json = {};
   if(data) {
@@ -306,7 +311,6 @@ const avalancheCanadaForecast = async (forecastUrl, req, res) => {
         json = null;
     }
   }
-  // console.log('avalancheCanadaForecast', data);
   return json;
 };
 
