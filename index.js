@@ -253,6 +253,63 @@ function ab511toGeoJson(json){
   return geoJson;
 }
 
+const avalancheCanada = async (req, res) => {
+  console.log('avalancheCanada');
+  const proxyURL = 'https://www.avalanche.ca/api/forecasts';
+  const request = await fetch(proxyURL);
+  const data = await request.text();
+  var json = JSON.parse(data);
+
+  let features = json.features;
+  console.log('features.length', features.length);
+  // json = ab511toGeoJson(json);
+
+
+  for (const feature of features) {
+  // features.forEach((feature, index) => {
+    // add layer id
+    let forecasteUrl = '';
+
+    if (feature.properties.forecastUrl) {
+      forecastUrl =  'https://www.avalanche.ca' + feature.properties.forecastUrl;
+      const forecastDescription = await avalancheCanadaForecast(forecastUrl);
+      
+      if (forecastDescription){
+        Object.keys(forecastDescription).forEach(function(key) {
+          feature.properties[key] = forecastDescription[key];
+        });
+      }
+      
+      // feature.properties.forecastDescription = forecastDescription;
+    } else {
+      // create forecast url
+      console.log(' no forecast url', feature.properties.id);
+    }
+  }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // // res.setHeader('Content-Type', 'text/xml');
+  send(res, 200, JSON.stringify(json));
+};
+
+const avalancheCanadaForecast = async (forecastUrl, req, res) => {
+  const request = await fetch(forecastUrl);
+  const data = await request.text();
+  console.log(typeof data);
+
+  let json = {};
+  if(data) {
+    try {
+        json = JSON.parse(data);
+    } catch(e) {
+        json = null;
+    }
+  }
+  // console.log('avalancheCanadaForecast', data);
+  return json;
+};
+
 const notfound = (req, res) => send(res, 404, 'Not found route');
 
 module.exports = router(
@@ -262,6 +319,7 @@ module.exports = router(
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
+  get('/avalancheCanada', avalancheCanada),
   get('/aggregateLayers/:groupId', aggregateLayers),
   get('/getSiteMeta/:siteId', getSiteMeta),
   get('/*', notfound)
