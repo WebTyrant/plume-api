@@ -254,16 +254,12 @@ function ab511toGeoJson(json){
 }
 
 const avalancheCanada = async (req, res) => {
-  console.log('avalancheCanada');
   const proxyURL = 'https://www.avalanche.ca/api/forecasts';
   const request = await fetch(proxyURL);
   const data = await request.text();
   var json = JSON.parse(data);
 
   let features = json.features;
-  console.log('features.length', features.length);
-  // json = ab511toGeoJson(json);
-
 
   for (const feature of features) {
     // add layer id
@@ -282,7 +278,6 @@ const avalancheCanada = async (req, res) => {
         const currentDangerRatings = forecastDescription.dangerRatings[0].dangerRating;
         
         Object.keys(currentDangerRatings).forEach(function(key) {
-          console.log(key, currentDangerRatings[key]);
           feature.properties[key] = currentDangerRatings[key];
         });
 
