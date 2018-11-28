@@ -13,6 +13,7 @@ const assert = require('assert');
 
 const PASSWORD = encodeURI('AC1190!');
 const uri = `mongodb+srv://AdventureConditions:${PASSWORD}@adventureconditionscluster0-7honr.mongodb.net/test?retryWrites=true`;
+const dbName='responsegeographic';
 
 // map severity levels of events to a color
 const severityColors = {
@@ -124,7 +125,7 @@ const fetchAggregationLayers = async(groupId) => {
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
-    const db = client.db("adventureConditions");
+    const db = client.db(dbName);
     const collection = db.collection("aggregationSources");
 
     documents = await collection.find({'groupId': groupId}).toArray();
@@ -183,10 +184,42 @@ const getSiteMeta = async(req, res) => {
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
-    const db = client.db("adventureConditions");
-    const collection = db.collection("siteMeta");
+    const db = client.db(dbName);
+    const collection = db.collection("sitemeta");
     let documents = await collection.findOne({'siteId': siteId});
 
+    // returns null if there are no documents
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+  //return documents;
+}
+
+const getSiteLayers = async(req, res) => {
+  const siteId = await Promise.resolve(req.params.siteId); 
+  let client;
+  let documents = [];
+  console.log(siteId);
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db(dbName);
+    const collection = db.collection("layers");
+    // documents = await collection.find({
+    //   'siteTags': siteId
+    // });
+
+    documents = await collection.find({'siteTags': siteId}).toArray();
+
+    console.log('documents', documents);
     // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
@@ -321,5 +354,6 @@ module.exports = router(
   get('/avalancheCanada', avalancheCanada),
   get('/aggregateLayers/:groupId', aggregateLayers),
   get('/getSiteMeta/:siteId', getSiteMeta),
+  get('/getSiteLayers/:siteId', getSiteLayers),
   get('/*', notfound)
 );
