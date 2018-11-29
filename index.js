@@ -213,9 +213,6 @@ const getSiteLayers = async(req, res) => {
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const db = client.db(dbName);
     const collection = db.collection("layers");
-    // documents = await collection.find({
-    //   'siteTags': siteId
-    // });
 
     documents = await collection.find({'siteTags': siteId}).toArray();
 
@@ -232,7 +229,6 @@ const getSiteLayers = async(req, res) => {
   if (client) {
     client.close();
   }
-  //return documents;
 }
 
 const getSiteNavigation = async(req, res) => {
@@ -245,26 +241,21 @@ const getSiteNavigation = async(req, res) => {
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const db = client.db(dbName);
     const collection = db.collection('navigation');
-    // documents = await collection.find({
-    //   'siteTags': siteId
-    // });
 
     documents = await collection.findOne({'siteId': siteId});
 
-    console.log('documents', documents);
     // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
 
   } catch (err) {
     send(res, 500, 'Error: ' + err);
-    // console.log(err.stack);
+    console.log(err.stack);
   }
 
   if (client) {
     client.close();
   }
-  //return documents;
 }
 
 const ab511proxy = async (req, res) => {
