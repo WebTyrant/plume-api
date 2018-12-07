@@ -273,6 +273,50 @@ const ab511proxy = async (req, res) => {
   send(res, 200, JSON.stringify(json));
 }
 
+// getDriveBCCameras
+const getDriveBCCameras = async (req, res) => {
+  const proxyURL = await Promise.resolve(req.url.replace('/getDriveBCCameras/', ''));
+  console.log('proxyURL', proxyURL);
+  const request = await fetch(proxyURL);
+  const data = await request.text();
+  var json = JSON.parse(data);
+
+  json = bcCameraJsontoGeoJson(json);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // // res.setHeader('Content-Type', 'text/xml');
+  send(res, 200, JSON.stringify(json));
+}
+
+function bcCameraJsontoGeoJson(json){
+  console.log('bcCameraJsontoGeoJson', json);
+  var geoJson = {
+    "type": "FeatureCollection",
+    "features": [],
+  };
+  for (var i = 0; i < json.length; i++) {
+    var item = json[i];
+    var feature = {
+      "type": "Feature",
+    };
+    feature.geometry = {
+      "type": "Point",
+      "coordinates": [item[6], item[5]],
+    };
+    feature.properties = {};
+    feature.properties.id = item[0];
+    feature.properties.title = item[1];
+    feature.properties.description = item[2];
+    feature.properties.source = item[3];
+    feature.properties.direction = item[4];
+    feature.properties.image = `http://images.drivebc.ca/bchighwaycam/pub/cameras/${item[0]}.jpg`;
+    feature.properties.link = `http://images.drivebc.ca/bchighwaycam/pub/html/dbc/${item[0]}.html`;
+    geoJson.features.push(feature);
+  }
+  return geoJson;
+}
+
 function ab511toGeoJson(json){
   var geoJson = {
           "type": "FeatureCollection",
@@ -374,6 +418,7 @@ module.exports = router(
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
+  get('/getDriveBCCameras/:url', getDriveBCCameras),
   get('/avalancheCanada', avalancheCanada),
   get('/aggregateLayers/:groupId', aggregateLayers),
   get('/getSiteMeta/:siteId', getSiteMeta),
