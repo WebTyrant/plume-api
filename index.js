@@ -170,7 +170,6 @@ const aggregateLayers = async (req, res) => {
           delete feature.properties[fields[fieldKey]];
         }
       });
-      console.log(features);
     }
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -207,7 +206,6 @@ const getSiteLayers = async(req, res) => {
   const siteId = await Promise.resolve(req.params.siteId); 
   let client;
   let documents = [];
-  console.log(siteId);
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
@@ -216,7 +214,6 @@ const getSiteLayers = async(req, res) => {
 
     documents = await collection.find({'siteTags': siteId}).toArray();
 
-    console.log('documents', documents);
     // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
@@ -235,7 +232,6 @@ const getSiteNavigation = async(req, res) => {
   const siteId = await Promise.resolve(req.params.siteId); 
   let client;
   let documents;
-  console.log(siteId);
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
@@ -276,7 +272,6 @@ const ab511proxy = async (req, res) => {
 // getDriveBCCameras
 const getDriveBCCameras = async (req, res) => {
   const proxyURL = await Promise.resolve(req.url.replace('/getDriveBCCameras/', ''));
-  console.log('proxyURL', proxyURL);
   const request = await fetch(proxyURL);
   const data = await request.text();
   var json = JSON.parse(data);
@@ -290,7 +285,6 @@ const getDriveBCCameras = async (req, res) => {
 }
 
 function bcCameraJsontoGeoJson(json){
-  console.log('bcCameraJsontoGeoJson', json);
   var geoJson = {
     "type": "FeatureCollection",
     "features": [],
