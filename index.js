@@ -306,7 +306,7 @@ function bcCameraJsontoGeoJson(json){
     };
     feature.properties = {};
     feature.properties.id = item[0];
-    feature.properties.title = item[1];
+    feature.properties.name = item[1];
     feature.properties.description = item[2];
     feature.properties.source = item[3];
     feature.properties.direction = item[4];
