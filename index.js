@@ -258,6 +258,36 @@ const getSiteNavigation = async(req, res) => {
   }
 }
 
+const getSiteLayersByIds = async(req, res) => {
+  const siteIds = await Promise.resolve(req.params.siteIds); 
+  let client;
+  let documents = [];
+  console.log(siteIds);
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db(dbName);
+    const collection = db.collection("layers");
+    idsArray = siteIds.split(',');
+
+    // Example { id: { $in: [ "bc-evacuation-alerts" , "bc-evacuation-orders", "bc-evacuation-all-clear" ] } }
+    documents = await collection.find({ id: { $in: idsArray } }).toArray();
+
+    console.log('documents', documents);
+    // returns null if there are no documents
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+}
+
 const ab511proxy = async (req, res) => {
   // const proxyURL = await Promise.resolve(req.params.url);
   const proxyURL = await Promise.resolve(req.url.replace('/ab511proxy/', ''));
@@ -378,6 +408,7 @@ module.exports = router(
   get('/aggregateLayers/:groupId', aggregateLayers),
   get('/getSiteMeta/:siteId', getSiteMeta),
   get('/getSiteLayers/:siteId', getSiteLayers),
+  get('/getSiteLayersByIds/:siteIds', getSiteLayersByIds),
   get('/getSiteNavigation/:siteId', getSiteNavigation),
   get('/*', notfound)
 );
