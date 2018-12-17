@@ -170,7 +170,6 @@ const aggregateLayers = async (req, res) => {
           delete feature.properties[fields[fieldKey]];
         }
       });
-      console.log(features);
     }
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -207,7 +206,6 @@ const getSiteLayers = async(req, res) => {
   const siteId = await Promise.resolve(req.params.siteId); 
   let client;
   let documents = [];
-  console.log(siteId);
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
@@ -216,7 +214,6 @@ const getSiteLayers = async(req, res) => {
 
     documents = await collection.find({'siteTags': siteId}).toArray();
 
-    console.log('documents', documents);
     // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
@@ -235,7 +232,6 @@ const getSiteNavigation = async(req, res) => {
   const siteId = await Promise.resolve(req.params.siteId); 
   let client;
   let documents;
-  console.log(siteId);
   try {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
@@ -301,6 +297,48 @@ const ab511proxy = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   // // res.setHeader('Content-Type', 'text/xml');
   send(res, 200, JSON.stringify(json));
+}
+
+// getDriveBCCameras
+const getDriveBCCameras = async (req, res) => {
+  const proxyURL = await Promise.resolve(req.url.replace('/getDriveBCCameras/', ''));
+  const request = await fetch(proxyURL);
+  const data = await request.text();
+  var json = JSON.parse(data);
+
+  json = bcCameraJsontoGeoJson(json);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // // res.setHeader('Content-Type', 'text/xml');
+  send(res, 200, JSON.stringify(json));
+}
+
+function bcCameraJsontoGeoJson(json){
+  var geoJson = {
+    "type": "FeatureCollection",
+    "features": [],
+  };
+  for (var i = 0; i < json.length; i++) {
+    var item = json[i];
+    var feature = {
+      "type": "Feature",
+    };
+    feature.geometry = {
+      "type": "Point",
+      "coordinates": [item[6], item[5]],
+    };
+    feature.properties = {};
+    feature.properties.id = item[0];
+    feature.properties.name = item[1];
+    feature.properties.description = item[2];
+    feature.properties.source = item[3];
+    feature.properties.direction = item[4];
+    feature.properties.image = `http://images.drivebc.ca/bchighwaycam/pub/cameras/${item[0]}.jpg`;
+    feature.properties.link = `http://images.drivebc.ca/bchighwaycam/pub/html/dbc/${item[0]}.html`;
+    geoJson.features.push(feature);
+  }
+  return geoJson;
 }
 
 function ab511toGeoJson(json){
@@ -404,6 +442,7 @@ module.exports = router(
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
   get('/drive511proxy', drive511proxy),
+  get('/getDriveBCCameras/:url', getDriveBCCameras),
   get('/avalancheCanada', avalancheCanada),
   get('/aggregateLayers/:groupId', aggregateLayers),
   get('/getSiteMeta/:siteId', getSiteMeta),
