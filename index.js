@@ -435,6 +435,117 @@ const avalancheCanadaForecast = async (forecastUrl, req, res) => {
   return json;
 };
 
+const getAllLayers = async(req, res) => {
+  let client;
+  // let documents = [];
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db(dbName);
+    const collection = db.collection("navigation");
+    // let documents = await collection.findOne({'siteId': siteId});
+
+    let documents = await collection.aggregate(
+      [
+        {
+          '$unwind': {
+            'path': '$navigationDefinitions'
+          }
+        }, {
+          '$group': {
+            '_id': 0, 
+            'id': {
+              '$push': '$navigationDefinitions.id'
+            }
+          }
+        }, {
+          '$lookup': {
+            'from': 'layers', 
+            'localField': 'id', 
+            'foreignField': 'id', 
+            'as': 'navigationDefinitions'
+          }
+        }, {
+          '$project': {
+            'navigationDefinitions': 1, 
+            '_id': 0
+          }
+        }
+      ]).toArray();
+
+    // returns null if there are no documents
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+  //return documents;
+}
+
+const getLayersByNavigation = async(req, res) => {
+  const siteId = await Promise.resolve(req.params.siteId); 
+  let client;
+  let documents = [];
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db(dbName);
+    const collection = db.collection("navigation");
+    // let documents = await collection.findOne({'siteId': siteId});
+
+    documents = await collection.aggregate(
+      [
+        {
+          '$match': {
+            'siteId': siteId
+          }
+        }, {
+          '$unwind': {
+            'path': '$navigationDefinitions'
+          }
+        }, {
+          '$group': {
+            '_id': 0, 
+            'id': {
+              '$push': '$navigationDefinitions.id'
+            }
+          }
+        }, {
+          '$lookup': {
+            'from': 'layers', 
+            'localField': 'id', 
+            'foreignField': 'id', 
+            'as': 'navigationDefinitions'
+          }
+        }, {
+          '$project': {
+            'navigationDefinitions': 1, 
+            '_id': 0
+          }
+        }
+      ]).toArray();
+
+    // returns null if there are no documents
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents[0].navigationDefinitions);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+  //return documents;
+}
+
 const notfound = (req, res) => send(res, 404, 'Not found route');
 
 module.exports = router(
@@ -451,5 +562,7 @@ module.exports = router(
   get('/getSiteLayers/:siteId', getSiteLayers),
   get('/getSiteLayersByIds/:siteIds', getSiteLayersByIds),
   get('/getSiteNavigation/:siteId', getSiteNavigation),
+  get('/getAllLayers', getAllLayers),
+  get('/getLayersByNavigation/:siteId', getLayersByNavigation),
   get('/*', notfound)
 );
