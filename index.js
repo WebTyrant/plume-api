@@ -56,7 +56,9 @@ const proxy = async (req, res) => {
 }
 
 const drive511proxy = async (req, res) => {
-  const response = await fetch('http://api.open511.gov.bc.ca/events?format=json&status=ACTIVE&event_type=INCIDENT');
+  const proxyURL = await Promise.resolve(req.url.replace('/drive511proxy/', ''));
+  const response = await fetch(proxyURL);
+  // const response = await fetch('http://api.open511.gov.bc.ca/events?format=json&status=ACTIVE');
   const data = await response.text();
   var json = JSON.parse(data);
   json = json.events; 
@@ -441,7 +443,7 @@ module.exports = router(
   get('/smokeproxy', smokeproxy),
   get('/kmltogeojson/:url', kmltogeojson),
   get('/simplifygeojson/:url', simplifygeojson),
-  get('/drive511proxy', drive511proxy),
+  get('/drive511proxy/:url', drive511proxy),
   get('/getDriveBCCameras/:url', getDriveBCCameras),
   get('/avalancheCanada', avalancheCanada),
   get('/aggregateLayers/:groupId', aggregateLayers),
