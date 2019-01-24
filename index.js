@@ -442,41 +442,14 @@ const getAllLayers = async(req, res) => {
     // Use connect method to connect to the Server
     client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const db = client.db(dbName);
-    const collection = db.collection("navigation");
+    const collection = db.collection("layers");
     // let documents = await collection.findOne({'siteId': siteId});
 
-    let documents = await collection.aggregate(
-      [
-        {
-          '$unwind': {
-            'path': '$navigationDefinitions'
-          }
-        }, {
-          '$group': {
-            '_id': 0, 
-            'id': {
-              '$push': '$navigationDefinitions.id'
-            }
-          }
-        }, {
-          '$lookup': {
-            'from': 'layers', 
-            'localField': 'id', 
-            'foreignField': 'id', 
-            'as': 'navigationDefinitions'
-          }
-        }, {
-          '$project': {
-            'navigationDefinitions': 1, 
-            '_id': 0
-          }
-        }
-      ]).toArray();
+    let documents = await collection.find().toArray();
 
     // returns null if there are no documents
     res.setHeader('Access-Control-Allow-Origin', '*');
     send(res, 200, documents);
-
   } catch (err) {
     send(res, 500, 'Error: ' + err);
     console.log(err.stack);
@@ -546,6 +519,33 @@ const getLayersByNavigation = async(req, res) => {
   //return documents;
 }
 
+const getAllSites = async(req, res) => {
+  console.log('getAllSites');
+  // const siteId = await Promise.resolve(req.params.siteId); 
+  let client;
+  // let documents = [];
+  try {
+    // Use connect method to connect to the Server
+    client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    const db = client.db(dbName);
+    const collection = db.collection("sitemeta");
+    let documents = await collection.find({}).toArray();
+
+    // returns null if there are no documents
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    send(res, 200, documents);
+
+  } catch (err) {
+    send(res, 500, 'Error: ' + err);
+    console.log(err.stack);
+  }
+
+  if (client) {
+    client.close();
+  }
+  //return documents;
+}
+
 const notfound = (req, res) => send(res, 404, 'Not found route');
 
 module.exports = router(
@@ -563,6 +563,7 @@ module.exports = router(
   get('/getSiteLayersByIds/:siteIds', getSiteLayersByIds),
   get('/getSiteNavigation/:siteId', getSiteNavigation),
   get('/getAllLayers', getAllLayers),
+  get('/getAllSites', getAllSites),
   get('/getLayersByNavigation/:siteId', getLayersByNavigation),
   get('/*', notfound)
 );
